@@ -121,7 +121,11 @@ static void SendServerMessage(const char *text) noexcept
     strcpy(msg.nick, "SERVER");
     strcpy(msg.text, text);
 
-    SerializeNetMessage(&msg, buff);
+    if(SerializeNetMessage(&msg, buff, sizeof(buff)) != 0)
+    {
+        printf("Couldn't serialize given message\n");
+        return;
+    }
 
     SendServerRawMessage(buff);
 }

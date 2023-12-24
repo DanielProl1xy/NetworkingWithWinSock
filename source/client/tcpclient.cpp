@@ -69,7 +69,7 @@ int TCPClient::SendNetMessage(const char *text)
 
     char buff[NetSize()];
 
-    if(SerializeNetMessage(&nsg, buff) != 0)
+    if(SerializeNetMessage(&nsg, buff, sizeof(buff)) != 0)
         return -1;
 
     return send(server_socket, buff, NetSize(), 0);
