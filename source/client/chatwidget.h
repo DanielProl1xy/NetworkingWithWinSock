@@ -11,7 +11,7 @@
 
 struct InputBuffer
 {
-    char c_str[MAX_MESSAGE_LEN];
+    char c_str[NetSize()];
 };
 
 class ChatWidget 
