@@ -87,7 +87,7 @@ int TCPClient::GetNetMessage(NetMessage *out)
         return -1;
     }
 
-    if(DeserializeNetMessage(buff, out) != 0)
+    if(DeserializeNetMessage(buff, sizeof(buff), out) != 0)
     {
         return -2;
     }

@@ -33,9 +33,10 @@ static int SerializeNetMessage(NetMessage *msg, char *out_buff, size_t out_buff_
     return 0;
 }
 
-static int DeserializeNetMessage(const char *in_buff, NetMessage *out)
+static int DeserializeNetMessage(const char *in_buff, size_t in_buff_size, NetMessage *out)
 {   
     if(in_buff == nullptr || out == nullptr) return -1;
+    if(in_buff_size != NetSize()) return -1;
 
     if(memcpy(out, in_buff, NetSize()) != out)
     {
