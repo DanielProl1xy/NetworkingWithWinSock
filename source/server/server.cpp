@@ -77,8 +77,9 @@ int main()
             {
                 continue;
             }
-            else if(len > 0)
+            else if(len == NetSize()) // accepts messages only with specific size
             {
+                buff[NetSize() - 1] = '\0';
                 printf("%i recieved message: %s\n", len, buff);
                 SendServerRawMessage(buff);
             }

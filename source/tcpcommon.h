@@ -23,13 +23,15 @@ static constexpr size_t NetSize()
 static int SerializeNetMessage(NetMessage *msg, char *out_buff, size_t out_buff_size)
 {
     if(out_buff == nullptr || msg == nullptr) return -1;
-
     if(out_buff_size < NetSize()) return -1;
 
     if(memcpy(out_buff, msg, NetSize()) != out_buff)
     {
         return -1;
     }
+    
+    out_buff[NetSize() - 1] = '\0';
+
     return 0;
 }
 
@@ -42,5 +44,9 @@ static int DeserializeNetMessage(const char *in_buff, size_t in_buff_size, NetMe
     {
         return -1;
     }
+    
+    out->text[MAX_MESSAGE_LEN - 1] = '\0';
+    out->nick[MAX_FLAG_SIZE - 1] = '\0';
+
     return 0;
 }
