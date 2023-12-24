@@ -2,6 +2,8 @@
 This is an eduactional project, the main purpose of it is to dive into windows API more and get more expirence in gathering data and expirenece.
 The old one version of this project was not particulary good - leaking threads, magic numbers and without any UI. In the current version I implemented very simple client chat UI with few of commands to manage user's connections.
 
+![Alt text](pic.png "example")
+
 ## Non-blocking API
 The main thing I wanted to learn during this project- non-blocking API, because multi-threading for such a simple chat is literally useless, or over-engineering. In this version all net-working api is non-blocking.
 
