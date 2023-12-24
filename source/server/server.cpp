@@ -15,40 +15,9 @@
 bool isListening;
 std::vector<SOCKET> clients;
 
-void DisconnectClient(int id)
-{
-    closesocket(clients[id]);
-    clients.erase(clients.begin() + id);
-    printf("Client disconnected\n");
-    SendServerMessage("Client disconnected");
-}
-
-static void SendServerRawMessage(const char *buff) noexcept
-{
-    size_t size = clients.size();
-    for(int y = 0; y < size; ++y)
-    {
-        const int err = send(clients[y], buff, NetSize(), 0);
-        if(err == WSAECONNRESET)
-        {
-            DisconnectClient(y);
-            size--;
-            y--;
-        }
-    }
-}
-
-static void SendServerMessage(const char *text) noexcept
-{
-    NetMessage msg;
-    char buff[NetSize()];
-    strcpy(msg.nick, "SERVER");
-    strcpy(msg.text, text);
-
-    SerializeNetMessage(&msg, buff);
-
-    SendServerRawMessage(buff);
-}
+void DisconnectClient(int id);
+static void SendServerRawMessage(const char *buff) noexcept;
+static void SendServerMessage(const char *text) noexcept;
 
 int main()
 {
@@ -88,7 +57,7 @@ int main()
             getpeername(client, (SOCKADDR *)&client_info, NULL);
             printf("accepted connection from %s\n", inet_ntoa(client_info.sin_addr));
         }
-        
+
         size_t size = clients.size();
         for(int i = 0; i < size; ++i)
         {
@@ -120,4 +89,39 @@ int main()
 CleanUp:
     WSACleanup();
     return 0;
+}
+
+void DisconnectClient(int id)
+{
+    closesocket(clients[id]);
+    clients.erase(clients.begin() + id);
+    printf("Client disconnected\n");
+    SendServerMessage("Client disconnected");
+}
+
+static void SendServerRawMessage(const char *buff) noexcept
+{
+    size_t size = clients.size();
+    for(int y = 0; y < size; ++y)
+    {
+        const int err = send(clients[y], buff, NetSize(), 0);
+        if(err == WSAECONNRESET)
+        {
+            DisconnectClient(y);
+            size--;
+            y--;
+        }
+    }
+}
+
+static void SendServerMessage(const char *text) noexcept
+{
+    NetMessage msg;
+    char buff[NetSize()];
+    strcpy(msg.nick, "SERVER");
+    strcpy(msg.text, text);
+
+    SerializeNetMessage(&msg, buff);
+
+    SendServerRawMessage(buff);
 }
