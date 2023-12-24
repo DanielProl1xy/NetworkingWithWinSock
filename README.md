@@ -35,3 +35,8 @@ After server started - you can connect and start chatting it!
 ```cmd
 .\build\client.exe
 ```
+
+## The weakness of this code
+Serialization. You really can achieve undefined behavior with this code, so go on. It's gonna be funny.
+
+But I know that better to serialize with JSON or other formats, but not as a raw chunk of data.
