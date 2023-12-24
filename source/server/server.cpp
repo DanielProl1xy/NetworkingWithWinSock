@@ -16,8 +16,8 @@ bool isListening;
 std::vector<SOCKET> clients;
 
 void DisconnectClient(int id);
-static void SendServerRawMessage(const char *buff) noexcept;
-static void SendServerMessage(const char *text) noexcept;
+extern void SendServerRawMessage(const char *buff) noexcept;
+extern void SendServerMessage(const char *text) noexcept;
 
 int main()
 {

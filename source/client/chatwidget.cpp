@@ -170,7 +170,7 @@ LRESULT CALLBACK ChatWidget::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
 
                 int len = GetWindowTextLengthA(wnd->hEdit);
 
-                if(len < 0) return 0;
+                if(len <= 1) return 0;
 
                 if(len > MAX_MESSAGE_LEN)
                 {

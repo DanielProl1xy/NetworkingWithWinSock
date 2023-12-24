@@ -28,8 +28,6 @@ public:
 
     void SetClientNick(const char *nick);
 
-    int InitClient();
-
     int ConnectTo(const char *server_addr);
 
     void Disconnect();
