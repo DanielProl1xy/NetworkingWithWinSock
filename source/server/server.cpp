@@ -15,6 +15,41 @@
 bool isListening;
 std::vector<SOCKET> clients;
 
+void DisconnectClient(int id)
+{
+    closesocket(clients[id]);
+    clients.erase(clients.begin() + id);
+    printf("Client disconnected\n");
+    SendServerMessage("Client disconnected");
+}
+
+static void SendServerRawMessage(const char *buff) noexcept
+{
+    size_t size = clients.size();
+    for(int y = 0; y < size; ++y)
+    {
+        const int err = send(clients[y], buff, NetSize(), 0);
+        if(err == WSAECONNRESET)
+        {
+            DisconnectClient(y);
+            size--;
+            y--;
+        }
+    }
+}
+
+static void SendServerMessage(const char *text) noexcept
+{
+    NetMessage msg;
+    char buff[NetSize()];
+    strcpy(msg.nick, "SERVER");
+    strcpy(msg.text, text);
+
+    SerializeNetMessage(&msg, buff);
+
+    SendServerRawMessage(buff);
+}
+
 int main()
 {
     WSADATA ws;
@@ -53,27 +88,30 @@ int main()
             getpeername(client, (SOCKADDR *)&client_info, NULL);
             printf("accepted connection from %s\n", inet_ntoa(client_info.sin_addr));
         }
+        
         size_t size = clients.size();
         for(int i = 0; i < size; ++i)
         {
-            char buff[MAX_MESSAGE_LEN] = "";
-            const int len = recv(clients[i], buff, MAX_MESSAGE_LEN, 0);
-            if(len == WSAEWOULDBLOCK)
+            char buff[NetSize()] = "";
+            const int len = recv(clients[i], buff, NetSize(), 0);
+            if(len == SOCKET_ERROR)
+            {
+                const int err = WSAGetLastError();
+                if(err == WSAECONNRESET)
+                {
+                    DisconnectClient(i);
+                    size--;
+                    i--;
+                }
+            }
+            else if(len == WSAEWOULDBLOCK)
             {
                 continue;
             }
             else if(len > 0)
             {
                 printf("%i recieved message: %s\n", len, buff);
-
-                for(int y = 0; y < size; ++y)
-                {
-                    const int r = send(clients[y], buff, MAX_MESSAGE_LEN, 0);
-                    if(r == SOCKET_ERROR)
-                    {
-                        printf("couldn't send a message %i\n", WSAGetLastError());
-                    }
-                }
+                SendServerRawMessage(buff);
             }
         }
         Sleep(16);

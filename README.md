@@ -14,10 +14,8 @@ To use client-side app you need just start it and use very few on needed commsnd
 
 ```/connect [ip]``` - connects to the given IP, shows Message Box on error.
 
-[NOT IMPLEMENTED YET]
 ```/disconnect``` - disconnects client from server, if connected
 
-[NOT IMPLEMENTED YET]
 ```/nickname [string]``` - accepts and changes current user's nickname, visible in network.
 
 # Usage on Windows

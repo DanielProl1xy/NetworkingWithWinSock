@@ -44,16 +44,21 @@ int ChatApplication::ProcessCommand(const char *command)
     {
         size_t flag_len = GetNextToken(command, buf_len + 2, flag);
         DEBUG_ARGS("COMMAND: Connect to %s\n", flag);
-        return client.ConnectTo(flag);
+        int err = client.ConnectTo(flag);
+        if(err != 0)
+            widget->DisplayErrorMessage("Couldn't connect for some reason :<");
+        return 0;
     }
     else if(strcmp(buf, commands.at(DISCONNECT)) == 0)
     {
         DEBUG("COMMAND: Disconnect\n");
+        client.Disconnect();
         return 0;
     }
     else if(strcmp(buf, commands.at(SET_NICK)) == 0)
     {
         size_t flag_len = GetNextToken(command, buf_len + 2, flag);
+        client.SetClientNick(flag);
         DEBUG_ARGS("COMMAND: Set nickname to %s\n", flag);
         return 0;
     }
@@ -71,7 +76,6 @@ int ChatApplication::Exec(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pC
     widget->Show();
 
     client = TCPClient();
-    client.InitClient();
     while(!widget->ShouldClose())
     {
         widget->Update();
@@ -80,7 +84,7 @@ int ChatApplication::Exec(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pC
         {
             if(usr_input[0] == '/')
             {
-                if(ProcessCommand(usr_input)  != 0)
+                if(ProcessCommand(usr_input) != 0)
                 {
                     widget->DisplayErrorMessage("Unkown command :<");
                 }
@@ -92,7 +96,7 @@ int ChatApplication::Exec(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pC
         }
 
         NetMessage recv = {0};
-        if(client.GetNetMessage(recv.text) > 0)
+        if(client.GetNetMessage(&recv) > 0)
         {
             widget->DisplayMessage(recv);
         }

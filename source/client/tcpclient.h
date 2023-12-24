@@ -12,7 +12,7 @@ class TCPClient
 {
 
 private:
-    char client_nick[MAX_FLAG_SIZE];
+    char client_nick[MAX_FLAG_SIZE] = "DefUser";
 
     SOCKET server_socket;
     SOCKET client_socket;
@@ -25,9 +25,16 @@ public:
     ~TCPClient();
 
 public:
+
     void SetClientNick(const char *nick);
+
     int InitClient();
+
     int ConnectTo(const char *server_addr);
+
+    void Disconnect();
+
     int SendNetMessage(const char *text);
-    int GetNetMessage(char *out_buff);
+
+    int GetNetMessage(NetMessage *out);
 };

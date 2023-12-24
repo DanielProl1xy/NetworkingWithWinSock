@@ -11,6 +11,8 @@ TCPClient::TCPClient()
 TCPClient::~TCPClient()
 {
     closesocket(client_socket);
+    closesocket(server_socket);
+    WSACleanup();
 }
 
 void TCPClient::SetClientNick(const char *nick)
@@ -20,13 +22,24 @@ void TCPClient::SetClientNick(const char *nick)
 
 int TCPClient::ConnectTo(const char *server_addr)
 {
+    WSADATA ws;
+    WSAStartup(MAKEWORD(2, 2), &ws);
+
+    info = {0};
+    info.sin_family = AF_INET;
+    info.sin_port = htons(NET_PORT);
+
+    isConnected = false;
+
     info.sin_addr.s_addr = inet_addr(server_addr);
 
+    client_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     server_socket = socket(info.sin_family, SOCK_STREAM, IPPROTO_TCP);
+    
     int lr = connect(server_socket, (SOCKADDR*)&info, sizeof(info));
 
     if(lr != 0)
-        return -1;
+        return lr;
 
     isConnected = true;
 
@@ -37,38 +50,43 @@ int TCPClient::ConnectTo(const char *server_addr)
     return 0;
 }
 
-int TCPClient::InitClient()
+void TCPClient::Disconnect()
 {
-    WSADATA ws;
-    WSAStartup(MAKEWORD(2, 2), &ws);
-    client_socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-
-    info = {0};
-    info.sin_family = AF_INET;
-    info.sin_port = htons(NET_PORT);
-
-
+    closesocket(server_socket);
+    closesocket(client_socket);
+    shutdown(client_socket, SD_BOTH);
+    WSACleanup();
     isConnected = false;
-    return 0;
 }
 
 int TCPClient::SendNetMessage(const char *text)
 {
     if(isConnected == false) return -1;
 
-    return send(server_socket, text, strlen(text), 0);
+    NetMessage nsg = {0};
+    strcpy(nsg.nick, client_nick);
+    strcpy(nsg.text, text);
+
+    char buff[NetSize()];
+
+    SerializeNetMessage(&nsg, buff);
+
+    return send(server_socket, buff, NetSize(), 0);
 }
 
-int TCPClient::GetNetMessage(char *out_buff)
+int TCPClient::GetNetMessage(NetMessage *out)
 {
     if(isConnected == false) return -1;
+    char buff[NetSize()];
 
-    const int len = recv(server_socket, out_buff, MAX_MESSAGE_LEN, 0);
+    const int len = recv(server_socket, buff, NetSize(), 0);
 
     if(len == WSAEWOULDBLOCK)
     {
         return -1;
     }
 
+    DeserializeNetMessage(buff, out);
     return len;
 }
+
