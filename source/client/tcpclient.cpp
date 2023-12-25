@@ -5,7 +5,7 @@
 
 TCPClient::TCPClient()
 {
-
+    isConnected = false;
 }
 
 TCPClient::~TCPClient()
@@ -41,11 +41,11 @@ int TCPClient::ConnectTo(const char *server_addr)
     if(lr != 0)
         return lr;
 
-    isConnected = true;
-
     u_long mode = 1;
     ioctlsocket(server_socket, FIONBIO, &mode);
     ioctlsocket(client_socket, FIONBIO, &mode);
+
+    isConnected = true;
 
     return 0;
 }
@@ -77,19 +77,18 @@ int TCPClient::SendNetMessage(const char *text)
 
 int TCPClient::GetNetMessage(NetMessage *out)
 {
-    if(isConnected == false) return -1;
+    if(isConnected == false) return 0;
     char buff[NetSize()];
 
     const int len = recv(server_socket, buff, NetSize(), 0);
 
     if(len == WSAEWOULDBLOCK)
     {
-        return -1;
+        return 0;
     }
-
     if(DeserializeNetMessage(buff, sizeof(buff), out) != 0)
     {
-        return -2;
+        return 0;
     }
 
     return len;

@@ -46,20 +46,28 @@ int ChatApplication::ProcessCommand(const char *command)
         DEBUG_ARGS("COMMAND: Connect to %s\n", flag);
         int err = client.ConnectTo(flag);
         if(err != 0)
+        {
             widget->DisplayErrorMessage("Couldn't connect for some reason :<");
+            return 0;
+        }
+        widget->SetStatus(StatusKind::CONNECTED);
         return 0;
     }
     else if(strcmp(buf, commands.at(DISCONNECT)) == 0)
     {
         DEBUG("COMMAND: Disconnect\n");
         client.Disconnect();
+        widget->SetStatus(StatusKind::DISCONNECTED);
         return 0;
     }
     else if(strcmp(buf, commands.at(SET_NICK)) == 0)
     {
         size_t flag_len = GetNextToken(command, buf_len + 2, flag);
-        client.SetClientNick(flag);
-        DEBUG_ARGS("COMMAND: Set nickname to %s\n", flag);
+        if(flag_len > 0)
+        {
+            client.SetClientNick(flag);
+            DEBUG_ARGS("COMMAND: Set nickname to %s\n", flag);
+        }
         return 0;
     }
 
@@ -75,10 +83,19 @@ int ChatApplication::Exec(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pC
     }
     widget->Show();
 
+    widget->SetStatus(StatusKind::DISCONNECTED);
     client = TCPClient();
+
     while(!widget->ShouldClose())
     {
         widget->Update();
+
+        NetMessage recv = {0};
+        if(client.GetNetMessage(&recv) > 0)
+        {
+            widget->DisplayNetMessage(recv);
+        }
+
         char *usr_input = widget->GetUserInput();
         if(usr_input)
         {
@@ -91,17 +108,21 @@ int ChatApplication::Exec(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pC
             }
             else
             {
-                client.SendNetMessage(usr_input);
+                const int err = client.SendNetMessage(usr_input);
+                if(err == SOCKET_ERROR)
+                {
+                    client.Disconnect();
+                    widget->SetStatus(StatusKind::DISCONNECTED);
+                    widget->DisplayErrorMessage("Couldn't send a message, probably you are not connected ;<");
+                }
             }
         }
-
-        NetMessage recv = {0};
-        if(client.GetNetMessage(&recv) > 0)
-        {
-            widget->DisplayMessage(recv);
-        }
     }
+
+    client.Disconnect();
     widget->Close();
     
+    free(widget);
+
     return 0;
 }

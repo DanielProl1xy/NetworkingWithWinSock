@@ -12,6 +12,7 @@ int button_height = 30;
 
 ChatWidget *ChatWidget::instance = nullptr;
 
+
 ChatWidget *ChatWidget::GetInstance()
 {
     if(instance)
@@ -27,6 +28,7 @@ ChatWidget::ChatWidget()
     mShouldClose = false;
     message_last = 0;
     input_size = 0;
+    n_status = 0;
 }
 
 ChatWidget::~ChatWidget()
@@ -70,7 +72,7 @@ int ChatWidget::Init(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLin
     hButton = CreateWindow(TEXT("BUTTON"),  // Predefined class; Unicode assumed 
                         TEXT("Send message"),      // Button text 
                         WS_VISIBLE | WS_CHILD | BS_PUSHBUTTON,  // Styles 
-                        window_width - (button_width + pad),         // x position 
+                        window_width - (button_width + pad * 1.5),         // x position 
                         window_height - (button_height + pad * 2),         // x position 
                         button_width,        // Button width
                         button_height,        // Button height
@@ -83,7 +85,7 @@ int ChatWidget::Init(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLin
                         TEXT("Send message"),      // Button text 
                         WS_TABSTOP | WS_VISIBLE | WS_CHILD | WS_BORDER,  // Styles 
                         pad,         // x position 
-                        window_height - (button_height + pad * 2),         // x position 
+                        window_height - (button_height + pad * 2),         // y position 
                         window_width - button_width - pad * 3,        // Button width
                         button_height,        // Button height
                         hWindow,     // Parent window
@@ -95,9 +97,21 @@ int ChatWidget::Init(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLin
                             TEXT(""),
                             WS_TABSTOP | WS_VISIBLE | WS_CHILD,
                             pad,
+                            pad * 2,
+                            window_width - pad * 3,
+                            window_height - button_height - pad * 5,
+                            hWindow,
+                            NULL,
+                            hInstance,
+                            NULL);
+
+    hStatusBar = CreateWindow(TEXT("STATIC"),
+                            TEXT(""),
+                            WS_TABSTOP | WS_VISIBLE | WS_CHILD | WS_BORDER,
                             pad,
-                            window_width - pad * 2,
-                            window_height - button_height - pad * 4,
+                            pad,
+                            window_width - pad * 3,
+                            pad,
                             hWindow,
                             NULL,
                             hInstance,
@@ -130,10 +144,37 @@ char *ChatWidget::GetUserInput()
     else return NULL;
 }
 
-void ChatWidget::DisplayMessage(NetMessage msg)
+void ChatWidget::DisplayNetMessage(NetMessage msg)
 {
+    // [1] [2] [3] [ ] null
+    //              ^last ^lest++
+    // [2] [3] [4] [ ] null
+    //              ^last ^last++
+
     messages[message_last] = msg;
-    message_last = (message_last + 1) % MAX_MESSAGES_COUNT;
+    message_last++;
+
+    char all_msg[MAX_MESSAGE_LEN * MAX_MESSAGES_COUNT + MAX_FLAG_SIZE * MAX_MESSAGES_COUNT] = "";
+
+    for(int i = 0; i < message_last; ++i)
+    {
+        const char *msg = messages[i].text;
+        const char *nick = messages[i].nick;
+        strcat(all_msg, nick);
+        strcat(all_msg, ": ");
+        strcat(all_msg, msg);
+        strcat(all_msg, "\r\n");
+    }
+
+    SetWindowTextA(hMessages, all_msg);
+
+    if(message_last > MAX_MESSAGES_COUNT - 1)
+    {
+        message_last--;
+
+        memmove(messages, &messages[1], sizeof(messages[0]) * MAX_MESSAGES_COUNT - 1);
+    }
+
 }
 
 void ChatWidget::DisplayErrorMessage(const char *message)
@@ -155,6 +196,17 @@ void ChatWidget::Update()
     }
     SendMessage(hWindow, WM_PAINT, NULL, NULL);
     Sleep(16);
+}
+
+void ChatWidget::SetStatus(Status st) 
+{ 
+    if(st < StatusKind::STATUS_COUNT)
+    {
+        n_status = st; 
+        char c_status[MAX_FLAG_SIZE];
+        sprintf(c_status, "Status: %s", status_messages.at(n_status));
+        SetWindowTextA(hStatusBar, c_status);
+    }
 }
 
 LRESULT CALLBACK ChatWidget::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -197,19 +249,7 @@ LRESULT CALLBACK ChatWidget::windowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPA
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hwnd, &ps);
         {
-            char all_msg[MAX_MESSAGE_LEN * MAX_MESSAGES_COUNT + MAX_FLAG_SIZE * MAX_MESSAGES_COUNT] = "";
-
-            for(int i = 0; i < wnd->message_last; ++i)
-            {
-                const char *msg = wnd->messages[i].text;
-                const char *nick = wnd->messages[i].nick;
-                strcat(all_msg, nick);
-                strcat(all_msg, ": ");
-                strcat(all_msg, msg);
-                strcat(all_msg, "\r\n");
-            }
-
-            SetWindowTextA(wnd->hMessages, all_msg);
+            FillRect(hdc, &ps.rcPaint, (HBRUSH)(COLOR_WINDOW + 1));
         }
         EndPaint(hwnd, &ps);
         return 0;

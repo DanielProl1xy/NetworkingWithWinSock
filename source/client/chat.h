@@ -1,7 +1,6 @@
 #pragma once
 
 #include "chatwidget.h"
-#include <unordered_map>
 
 enum ChatCommandKind
 {

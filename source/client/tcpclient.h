@@ -18,6 +18,7 @@ private:
     SOCKET client_socket;
     SOCKADDR_IN info;
 
+public:
     bool isConnected;
 
 public:
